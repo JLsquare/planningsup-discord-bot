@@ -85,12 +85,12 @@ const createChoicesEmbed = (titles) => {
     return embed;
 }
 
-const addChoicesReactionsEmoji = (titles, response) => {
+const addChoicesReactionsEmoji = async (titles, response) => {
     const emojies = '🏭 🏢 🏬 🏣 🏤 🏥 🏦 🏨 🏪 🏫 🏩 💒 🏛 🕌 🕍 🛕 🕋 ⛩'.split(' ');
 
     const choices = getPlanningData(...titles).map(data => data.title);
     for (let i = 0; i < choices.length; i++) {
-        response.react(emojies[i]);
+        await response.react(emojies[i]);
     }
 }
 
@@ -162,7 +162,7 @@ const processPlanning = async (titles, interaction, first = true) => {
             response = await interaction.editReply({ embeds: [embed], fetchReply: true });
         }
 
-        addChoicesReactionsEmoji(titles, response);
+        await addChoicesReactionsEmoji(titles, response);
 
         const emojiCollector = response.createReactionCollector({ time: 60000 });
 

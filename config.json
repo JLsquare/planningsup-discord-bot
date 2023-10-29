@@ -2,6 +2,7 @@
   "discordToken": "...",
   "discordClientId": "...",
   "planningSupUrl": "https://planningsup.app/api/v1/",
+  "database": "./planningsup.db",
   "embedInfo": {
     "name": "PlanningSup",
     "url": "https://planningsup.app",
@@ -41,6 +42,7 @@
     "noEventEmendFieldName": "Aucun événement.",
     "noEventEmbedFieldValue": "Aucun événement cette semaine.",
     "collectorTime": 60000,
+    "allChoice": "All / Tous",
     "defaultColorEmoji": "⬛",
     "colorEmojis": {
       "#d4fbcc": "🟩",
@@ -117,6 +119,14 @@
         "value": "Affiche les plannings disponibles selon les filtres."
       },
       {
+        "name": "/planning",
+        "value": "Si vous avez sauvegardé votre planning, affiche le planning de la semaine."
+      },
+      {
+        "name": "/saveplanning <etablissement> <edt1> <edt2> <edt3> <edt4>",
+        "value": "Sauvegarde le planning pour l'utilisation de la commande /planning sans filtres."
+      },
+      {
         "name": "/ping",
         "value": "Affiche le ping du bot."
       },
@@ -129,5 +139,10 @@
         "value": "Affiche les commandes du bot."
       }
     ]
+  },
+  "savePlanning": {
+    "command": "saveplanning",
+    "commandDescription": "Sauvegarde le planning pour l'utilisation de la commande /planning sans filtres.",
+    "embedDescription": "Votre planning a été sauvegardé."
   }
 }

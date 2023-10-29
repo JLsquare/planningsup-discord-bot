@@ -3,6 +3,7 @@ const axios = require('axios');
 const signale = require('signale');
 const config = require('../config.json');
 const PlanningSupEmbedBuilder = require('../utils/embed');
+const database = require('../utils/database');
 
 let planningUrls = [];
 
@@ -163,7 +164,18 @@ async function handleButtonInteraction(interaction, i, planningData, titles, wee
     return weekOffset;
 }
 
+function titlesAllToNull(titles) {
+    for (let i = 0; i < titles.length; i++) {
+        if (titles[i] === config.planning.allChoice) {
+            titles[i] = null;
+        }
+    }
+
+    return titles;
+}
+
 async function processPlanning(titles, interaction, first = true, weekOffset = 0) {
+    titles = titlesAllToNull(titles);
     signale.info(`Planning command executed by ${interaction.user.tag} : ${titles.join(' / ')}`);
     const planningId = getPlanningData(...titles).fullId;
     const planningData = await fetchPlanningById(planningId);
@@ -204,6 +216,21 @@ async function processPlanning(titles, interaction, first = true, weekOffset = 0
     });
 }
 
+function planningIdToTitles(planningId) {
+    let titles = [];
+    let ids = planningId.split('.');
+    let currentData = planningUrls;
+    for (let i = 0; i < ids.length; i++) {
+        const fullId = ids.slice(0, i + 1).join('.');
+        currentData = currentData.find(data => data.fullId === fullId);
+        if (!currentData) break;
+        titles.push(currentData.title);
+        currentData = currentData.edts || [];
+    }
+    return titles;
+}
+
+
 function commandData() {
     let command = new SlashCommandBuilder()
         .setName(config.planning.command)
@@ -220,7 +247,14 @@ function commandData() {
 }
 
 async function execute(interaction) {
-    const titles = config.planning.commandOptions.map(option => interaction.options.getString(option.name));
+    let titles = config.planning.commandOptions.map(option => interaction.options.getString(option.name));
+
+    if (titles.every(title => !title)) {
+        const user = await database.getUser(interaction.user.id);
+        if (user) {
+            titles = planningIdToTitles(user.planning_id);
+        }
+    }
 
     await processPlanning(titles, interaction);
 }
@@ -228,7 +262,8 @@ async function execute(interaction) {
 async function autocomplete(interaction) {
     const titles = config.planning.commandOptions.map(option => interaction.options.getString(option.name));
 
-    const choices = getPlanningData(...titles).map(data => data.title);
+    let choices = [config.planning.allChoice];
+    choices.push(...getPlanningData(...titles).map(data => data.title));
     const focusedOption = interaction.options.getFocused(true);
     const filtered = choices.filter(choice => choice.startsWith(focusedOption.value));
 

@@ -68,8 +68,7 @@ async function execute(interaction) {
 async function autocomplete(interaction) {
     const titles = config.planning.commandOptions.map(option => interaction.options.getString(option.name));
 
-    let choices = [config.planning.allChoice];
-    choices.push(...getPlanningData(...titles).map(data => data.title));
+    const choices = getPlanningData(...titles).map(data => data.title)
     const focusedOption = interaction.options.getFocused(true);
     const filtered = choices.filter(choice => choice.startsWith(focusedOption.value));
 

@@ -27,12 +27,12 @@ function getPlanningData(...titles) {
     for (let index = 0; index < titles.length; index++) {
         const title = titles[index];
 
-        if (!title) break;
+        if (!title || currentData === []) break;
         currentData = currentData.find(data => data.title === title);
 
         if (!currentData) return [];
 
-        if (index !== titles.length - 1) {
+        if (index !== titles.length - 1 && currentData.edts) {
             currentData = currentData.edts || [];
         }
     }

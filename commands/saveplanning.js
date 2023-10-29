@@ -55,7 +55,11 @@ async function execute(interaction) {
     const planningId = getPlanningData(...titles).fullId;
 
     if(!planningId) {
-        await interaction.followUp(config.savePlanning.errorMessage);
+        const embed = new PlanningSupEmbedBuilder()
+            .setTitle(config.savePlanning.errorEmbedName)
+            .setDescription(config.savePlanning.errorEmbedDescription)
+
+        await interaction.reply({ embeds: [embed] });
         return;
     }
 

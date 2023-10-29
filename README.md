@@ -24,6 +24,8 @@ Le bot utilise un fichier **config.json** pour définir divers paramètres et op
 - Clonez ce dépôt.
 - Installer les dépendances : `npm install`
 - Remplissez votre config.json avec les informations nécessaires, y compris le token de votre bot Discord.
+- Lancez l'initialisation de la base de données : `node reset-database.js`
+- Lancez l'initialisation des commandes : `node deploy-commands.js`
 - Lancez le bot : `node index.js`
 
 ## Crédits

@@ -143,7 +143,7 @@
   "savePlanning": {
     "command": "saveplanning",
     "commandDescription": "Sauvegarde le planning pour l'utilisation de la commande /planning sans filtres.",
-    "embedDescription": "Votre planning a été sauvegardé, vous pouvez maintenant utiliser la commande /planning sans filtres."
+    "embedDescription": "Votre planning a été sauvegardé, vous pouvez maintenant utiliser la commande /planning sans filtres.",
     "errorEmbedName": "Erreur",
     "errorEmbedDescription": "Aucun planning n'a été trouvé avec ces filtres."
   }

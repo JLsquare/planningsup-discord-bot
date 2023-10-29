@@ -2,36 +2,8 @@ const { SlashCommandBuilder } = require('discord.js');
 const signale = require('signale');
 const PlanningSupEmbedBuilder = require('../utils/embed');
 const database = require('../utils/database');
+const { getPlanningData } = require('../utils/planning');
 const config = require('../config.json');
-const axios = require("axios");
-
-let planningUrls = [];
-
-(async () => {
-    try {
-        const response = await axios.get(`${config.planningSupUrl}urls`);
-        planningUrls = response.data;
-    } catch (error) {
-        signale.error("Error fetching data:", error);
-    }
-})();
-
-function getPlanningData(...titles) {
-    let currentData = planningUrls;
-    for (let index = 0; index < titles.length; index++) {
-        const title = titles[index];
-
-        if (!title) break;
-        currentData = currentData.find(data => data.title === title);
-
-        if (!currentData) return [];
-
-        if (index !== titles.length - 1) {
-            currentData = currentData.edts || [];
-        }
-    }
-    return currentData;
-}
 
 function commandData() {
     let command = new SlashCommandBuilder()

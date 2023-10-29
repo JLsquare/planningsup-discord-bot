@@ -1,59 +1,9 @@
 const { SlashCommandBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
-const axios = require('axios');
 const signale = require('signale');
 const config = require('../config.json');
 const PlanningSupEmbedBuilder = require('../utils/embed');
 const database = require('../utils/database');
-
-let planningUrls = [];
-
-(async () => {
-    try {
-        const response = await axios.get(`${config.planningSupUrl}urls`);
-        planningUrls = response.data;
-    } catch (error) {
-        signale.error("Error fetching data:", error);
-    }
-})();
-
-async function fetchPlanningById(id) {
-    try {
-        const res = await axios.get(`${config.planningSupUrl}calendars?p=${id}`)
-        return res.data;
-    } catch (error) {
-        return null;
-    }
-}
-
-function getPlanningData(...titles) {
-    let currentData = planningUrls;
-    for (let index = 0; index < titles.length; index++) {
-        const title = titles[index];
-
-        if (!title) break;
-        currentData = currentData.find(data => data.title === title);
-
-        if (!currentData) return [];
-
-        if (index !== titles.length - 1) {
-            currentData = currentData.edts || [];
-        }
-    }
-    return currentData;
-}
-
-function getWeekRange(weekOffset = 0) {
-    const now = new Date();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() + (7 * weekOffset) - now.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    const endOfWeek = new Date(now);
-    endOfWeek.setDate(now.getDate() + (7 * weekOffset) + 7 - now.getDay());
-    endOfWeek.setHours(0, 0, 0, 0);
-
-    return { start: startOfWeek, end: endOfWeek };
-}
+const { getPlanningData, fetchPlanningById, getWeekRange, formatEvent, formatEventDate } = require('../utils/planning');
 
 function createPlanningEmbed(planning, titles, weekOffset) {
     planning.events.sort((a, b) => new Date(a.start) - new Date(b.start));
@@ -113,7 +63,7 @@ function createEventFields(planning, weekOffset) {
         }
 
         const emoji = config.planning.colorEmojis[event.color.toLowerCase()] || config.planning.defaultColorEmoji;
-        eventsForDate += `${emoji} ${formatEventTime(event)} ${formatEventLocation(event)} ${formatEventName(event)}\n`;
+        eventsForDate += `${emoji} ${formatEvent(event)}\n`;
     }
 
     if (eventsForDate) {
@@ -121,26 +71,6 @@ function createEventFields(planning, weekOffset) {
     }
 
     return fields;
-}
-
-function formatEventDate(date) {
-    const eventDateObj = new Date(date);
-    const day = eventDateObj.toLocaleDateString('fr-FR', { weekday: 'short' }).toUpperCase();
-    const numericDate = eventDateObj.toLocaleDateString('fr-FR', { day: 'numeric' });
-    return `${day} ${numericDate}`;
-}
-
-function formatEventTime(event) {
-    const formatFrenchTime = (date) => new Date(date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-    return `\`${formatFrenchTime(event.start)}\` \`${formatFrenchTime(event.end)}\``;
-}
-
-function formatEventLocation(event) {
-    return `\`${event.location}\``;
-}
-
-function formatEventName(event) {
-    return event.name.length > 40 ? event.name.substring(0, 38) + "..." : event.name;
 }
 
 async function handleEmojiReaction(interaction, response, titles, emojiCollector, reaction) {
@@ -164,19 +94,15 @@ async function handleButtonInteraction(interaction, i, planningData, titles, wee
     return weekOffset;
 }
 
-function titlesAllToNull(titles) {
+async function processPlanning(titles, interaction, first = true, weekOffset = 0) {
     for (let i = 0; i < titles.length; i++) {
         if (titles[i] === config.planning.allChoice) {
             titles[i] = null;
         }
     }
 
-    return titles;
-}
-
-async function processPlanning(titles, interaction, first = true, weekOffset = 0) {
-    titles = titlesAllToNull(titles);
     signale.info(`Planning command executed by ${interaction.user.tag} : ${titles.join(' / ')}`);
+
     const planningId = getPlanningData(...titles).fullId;
     const planningData = await fetchPlanningById(planningId);
 
@@ -194,7 +120,9 @@ async function processPlanning(titles, interaction, first = true, weekOffset = 0
                 await handleEmojiReaction(interaction, response, titles, emojiCollector, reaction);
             }
         });
-        emojiCollector.on('end', async () => await response.reactions.removeAll());
+        emojiCollector.on('end', async () => {
+            await response.reactions.removeAll()
+        });
         return;
     }
 

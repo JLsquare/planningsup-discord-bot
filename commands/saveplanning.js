@@ -54,7 +54,12 @@ async function execute(interaction) {
     const titles = config.planning.commandOptions.map(option => interaction.options.getString(option.name));
     const planningId = getPlanningData(...titles).fullId;
 
-    database.insertOrUpdateUser(interaction.user.id, planningId)
+    if(!planningId) {
+        await interaction.followUp(config.savePlanning.errorMessage);
+        return;
+    }
+
+    database.insertOrUpdateUser(interaction.user.id, titles.join('.'), planningId);
 
     let embed = new PlanningSupEmbedBuilder()
         .setTitle(titles.join(' / '))
@@ -62,7 +67,7 @@ async function execute(interaction) {
 
     await interaction.reply({ embeds: [embed] });
 
-    signale.info(`SavePlanning command executed by ${interaction.user.tag}`);
+    signale.info(`SavePlanning command executed by ${interaction.user.tag} : ${titles.join(' / ')}`);
 }
 
 async function autocomplete(interaction) {

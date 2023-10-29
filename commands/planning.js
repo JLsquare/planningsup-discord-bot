@@ -216,21 +216,6 @@ async function processPlanning(titles, interaction, first = true, weekOffset = 0
     });
 }
 
-function planningIdToTitles(planningId) {
-    let titles = [];
-    let ids = planningId.split('.');
-    let currentData = planningUrls;
-    for (let i = 0; i < ids.length; i++) {
-        const fullId = ids.slice(0, i + 1).join('.');
-        currentData = currentData.find(data => data.fullId === fullId);
-        if (!currentData) break;
-        titles.push(currentData.title);
-        currentData = currentData.edts || [];
-    }
-    return titles;
-}
-
-
 function commandData() {
     let command = new SlashCommandBuilder()
         .setName(config.planning.command)
@@ -252,7 +237,7 @@ async function execute(interaction) {
     if (titles.every(title => !title)) {
         const user = await database.getUser(interaction.user.id);
         if (user) {
-            titles = planningIdToTitles(user.planning_id);
+            titles = user.planning_id.split('.');
         }
     }
 

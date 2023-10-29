@@ -1,17 +1,18 @@
 const { EmbedBuilder } = require('discord.js');
+const config = require('../config.json');
 
 class PlanningSupEmbedBuilder extends EmbedBuilder {
     constructor() {
         super();
-        this.setColor('161616');
+        this.setColor(config.embedInfo.color);
         this.setAuthor({
-            name: 'PlanningSup',
-            iconURL: 'https://i.imgur.com/ZD9gBoj.png',
-            url: 'https://planningsup.app'
+            name: config.embedInfo.name,
+            iconURL: config.embedInfo.iconUrl,
+            url: config.embedInfo.url
         });
         this.setFooter({
-            text: 'PlanningSup',
-            iconURL: 'https://i.imgur.com/ZD9gBoj.png'
+            text: config.embedInfo.name,
+            iconURL: config.embedInfo.iconUrl
         });
         this.setTimestamp(Date.now());
     }

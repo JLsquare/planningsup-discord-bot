@@ -1,0 +1,133 @@
+{
+  "discordToken": "...",
+  "discordClientId": "...",
+  "planningSupUrl": "https://planningsup.app/api/v1/",
+  "embedInfo": {
+    "name": "PlanningSup",
+    "url": "https://planningsup.app",
+    "iconUrl": "https://i.imgur.com/ZD9gBoj.png",
+    "color": "#161616"
+  },
+  "planning": {
+    "command": "planning",
+    "commandDescription": "Affiche le planning de la semaine.",
+    "commandOptions": [
+      {
+        "name": "etablissement",
+        "description": "Nom de l'établissement."
+      },
+      {
+        "name": "edt1",
+        "description": "Nom de l'emploi du temps 1."
+      },
+      {
+        "name": "edt2",
+        "description": "Nom de l'emploi du temps 2."
+      },
+      {
+        "name": "edt3",
+        "description": "Nom de l'emploi du temps 3."
+      },
+      {
+        "name": "edt4",
+        "description": "Nom de l'emploi du temps 4."
+      }
+    ],
+    "planningEmbedDescription": "Planning de la semaine.",
+    "choiceEmbedName": "Plannings",
+    "choiceEmbedDescription": "Liste des planning disponibles.",
+    "choiceEmbedFieldName": "Choix",
+    "noChoiceEmbedFieldValue": "Aucun planning disponible",
+    "noEventEmendFieldName": "Aucun événement.",
+    "noEventEmbedFieldValue": "Aucun événement cette semaine.",
+    "collectorTime": 60000,
+    "defaultColorEmoji": "⬛",
+    "colorEmojis": {
+      "#d4fbcc": "🟩",
+      "#efd6d8": "🟥",
+      "#bbe0ff": "🟦",
+      "#eddd6e": "🟨"
+    },
+    "choiceEmojis": [
+      "🏠",
+      "🏡",
+      "🏢",
+      "🏣",
+      "🏤",
+      "🏥",
+      "🏦",
+      "🏨",
+      "🏩",
+      "🏪",
+      "🏫",
+      "🏬",
+      "🏭",
+      "🏯",
+      "🏰",
+      "🕌",
+      "🕍",
+      "⛩",
+      "🕋",
+      "🛕"
+    ]
+  },
+  "ping": {
+    "command": "ping",
+    "commandDescription": "Affiche le ping du bot.",
+    "pingEmbedName": "Ping",
+    "pingEmbedDescription": "Calcul du ping du bot...",
+    "pongEmbedName": "Pong",
+    "pongEmbedDescription": "Details de la latence.",
+    "discordFieldName": "Discord latency",
+    "planningSupFieldName": "PlanningSup latency",
+    "errorMessage": "Une erreur est survenue lors du calcul du ping."
+  },
+  "info": {
+    "command": "info",
+    "commandDescription": "Affiche les informations du bot.",
+    "embedName": "Informations",
+    "embedDescription": "Ce bot a été créé par [JL](https://github.com/JLsquare), et utilise [PlanningSup](https://planningsup.app) créé par [Kernoeb](https://github.com/kernoeb).",
+    "fields": [
+      {
+        "name": "Github du bot",
+        "value": "Soon"
+      },
+      {
+        "name": "Github de PlanningSup",
+        "value": "https://github.com/kernoeb/planningsup"
+      },
+      {
+        "name": "Soutenez PlanningSup!",
+        "value": "https://www.paypal.com/paypalme/kernoeb"
+      }
+    ]
+  },
+  "help": {
+    "command": "help",
+    "commandDescription": "Affiche les commandes du bot.",
+    "embedName": "Commandes",
+    "embedDescription": "Liste des commandes du bot.",
+    "fields": [
+      {
+        "name": "/planning <etablissement> <edt1> <edt2> <edt3> <edt4>",
+        "value": "Affiche le planning de la semaine."
+      },
+      {
+        "name": "/planning <moins de filtres>",
+        "value": "Affiche les plannings disponibles selon les filtres."
+      },
+      {
+        "name": "/ping",
+        "value": "Affiche le ping du bot."
+      },
+      {
+        "name": "/info",
+        "value": "Affiche les informations du bot."
+      },
+      {
+        "name": "/help",
+        "value": "Affiche les commandes du bot."
+      }
+    ]
+  }
+}

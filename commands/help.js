@@ -1,23 +1,24 @@
 const { SlashCommandBuilder } = require('discord.js');
 const signale = require('signale');
 const PlanningSupEmbedBuilder = require('../utils/embed');
-require('dotenv').config();
+const config = require('../config.json');
 
-const commandData = new SlashCommandBuilder()
-    .setName('help')
-    .setDescription('Affiche la liste des commandes.');
+function commandData() {
+    return new SlashCommandBuilder()
+        .setName(config.help.command)
+        .setDescription(config.help.commandDescription);
+}
 
 async function execute(interaction) {
-    const embed = new PlanningSupEmbedBuilder()
-        .setTitle('Aide')
-        .setDescription('Liste des commandes disponibles.')
-        .addFields([
-            { name: '/planning <etablissement> <edt1> <edt2> <edt3> <edt4>', value: 'Affiche le planning de la semaine.', inline: false },
-            { name: '/planning <moins de filtres>', value: 'Affiche les plannings disponibles.', inline: false },
-            { name: '/ping', value: 'Affiche la latence du bot et de PlanningSup.', inline: false },
-            { name: '/info', value: 'Affiche des informations sur le bot.', inline: false },
-            { name: '/help', value: 'Affiche la liste des commandes.', inline: false },
-        ]);
+    let embed = new PlanningSupEmbedBuilder()
+        .setTitle(config.help.embedName)
+        .setDescription(config.help.embedDescription)
+
+    let fields = [];
+    for (const field of config.help.fields) {
+        fields.push({ name: field.name, value: field.value, inline: false });
+    }
+    embed.addFields(fields);
 
     await interaction.reply({ embeds: [embed] });
 
@@ -25,6 +26,6 @@ async function execute(interaction) {
 }
 
 module.exports = {
-    data: commandData,
+    commandData,
     execute
 };

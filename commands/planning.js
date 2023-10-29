@@ -1,128 +1,107 @@
-const { SlashCommandBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');const axios = require('axios');
+const { SlashCommandBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
+const axios = require('axios');
 const signale = require('signale');
+const config = require('../config.json');
 const PlanningSupEmbedBuilder = require('../utils/embed');
-require('dotenv').config();
 
-let planning = [];
+let planningUrls = [];
 
-async function fetchData() {
+(async () => {
     try {
-        const response = await axios.get(`${process.env.PLANNINGSUP_URL}urls`);
-        planning = response.data;
+        const response = await axios.get(`${config.planningSupUrl}urls`);
+        planningUrls = response.data;
     } catch (error) {
         signale.error("Error fetching data:", error);
     }
-}
-fetchData();
-
-function getPlanningData(...titles) {
-    let currentData = planning;
-    for (let title of titles) {
-        if (!title) break;
-        currentData = currentData.find(data => data.title === title);
-        if (!currentData) return [];
-        if (title !== titles[titles.length - 1]) currentData = currentData.edts || [];
-    }
-    return currentData;
-}
+})();
 
 async function fetchPlanningById(id) {
     try {
-        const response = await axios.get(`${process.env.PLANNINGSUP_URL}calendars?p=${id}`);
-        return response.data;
+        const res = await axios.get(`${config.planningSupUrl}calendars?p=${id}`)
+        return res.data;
     } catch (error) {
         return null;
     }
 }
 
-const getWeekRange = (weekOffset = 0) => {
-    const now = new Date();
-    const currentDay = now.getDay();
-    const startDay = (7 * weekOffset) - currentDay;
-    const endDay = (7 * weekOffset) + 7 - currentDay;
+function getPlanningData(...titles) {
+    let currentData = planningUrls;
+    for (let index = 0; index < titles.length; index++) {
+        const title = titles[index];
 
+        if (!title) break;
+        currentData = currentData.find(data => data.title === title);
+
+        if (!currentData) return [];
+
+        if (index !== titles.length - 1) {
+            currentData = currentData.edts || [];
+        }
+    }
+    return currentData;
+}
+
+function getWeekRange(weekOffset = 0) {
+    const now = new Date();
     const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() + startDay);
+    startOfWeek.setDate(now.getDate() + (7 * weekOffset) - now.getDay());
     startOfWeek.setHours(0, 0, 0, 0);
 
     const endOfWeek = new Date(now);
-    endOfWeek.setDate(now.getDate() + endDay);
+    endOfWeek.setDate(now.getDate() + (7 * weekOffset) + 7 - now.getDay());
     endOfWeek.setHours(0, 0, 0, 0);
 
     return { start: startOfWeek, end: endOfWeek };
-};
+}
 
-const createPlanningEmbed = (planning, titles, weekOffset) => {
+function createPlanningEmbed(planning, titles, weekOffset) {
     planning.events.sort((a, b) => new Date(a.start) - new Date(b.start));
 
-    const embed = new PlanningSupEmbedBuilder()
+    return new PlanningSupEmbedBuilder()
         .setTitle(titles.join(' / '))
-        .setDescription('Planning de la semaine');
-    const fields = createEventFields(planning, weekOffset);
-    embed.addFields(fields);
-
-    return embed;
-};
-
-const createChoicesEmbed = (titles) => {
-    const emojies = '🏭 🏢 🏬 🏣 🏤 🏥 🏦 🏨 🏪 🏫 🏩 💒 🏛 🕌 🕍 🛕 🕋 ⛩'.split(' ');
-
-    const embed = new PlanningSupEmbedBuilder()
-        .setTitle('Plannings')
-        .setDescription('Liste des planning disponibles');
-
-    const choices = getPlanningData(...titles).map(data => data.title);
-    let values = ""
-    for (let i = 0; i < choices.length; i++) {
-        values += `${emojies[i]}: ${choices[i]}\n`;
-    }
-    if (values === "") {
-        values = "Aucun planning disponible.";
-    }
-    const fields = [{ name: 'Choix', value: values }];
-    embed.addFields(fields);
-
-    return embed;
+        .setDescription(config.planning.planningEmbedDescription)
+        .addFields(createEventFields(planning, weekOffset));
 }
 
-const addChoicesReactionsEmoji = async (titles, response) => {
-    const emojies = '🏭 🏢 🏬 🏣 🏤 🏥 🏦 🏨 🏪 🏫 🏩 💒 🏛 🕌 🕍 🛕 🕋 ⛩'.split(' ');
+function createChoicesEmbed(titles) {
+    const choices = getPlanningData(...titles).map(data => data.title);
+    const values = choices.map((choice, index) => `${config.planning.choiceEmojis[index]}: ${choice}`).join('\n') || config.planning.noChoiceEmbedFieldValue;
+    return new PlanningSupEmbedBuilder()
+        .setTitle(config.planning.choiceEmbedName)
+        .setDescription(config.planning.choiceEmbedDescription)
+        .addFields([{
+            name: config.planning.choiceEmbedFieldName,
+            value: values
+        }]);
+}
 
+async function addChoicesReactionsEmoji(titles, response) {
     const choices = getPlanningData(...titles).map(data => data.title);
     for (let i = 0; i < choices.length; i++) {
-        await response.react(emojies[i]);
+        await response.react(config.planning.choiceEmojis[i]);
     }
 }
 
-const createEventFields = (planning, weekOffset) => {
+function createEventFields(planning, weekOffset) {
     if (!planning.events || planning.events.length === 0) {
-        return [{ name: 'Événements', value: 'Aucun événement prévu.' }];
+        return [{
+            name: config.planning.noEventEmendFieldName,
+            value: config.planning.noEventEmbedFieldValue
+        }];
     }
 
-    let fields = [];
-    let currentDate = "";
-    let eventsForDate = "";
-    const colorToEmoji = {
-        "#d4fbcc": ":green_square:",
-        "#efd6d8": ":red_square:",
-        "#bbe0ff": ":blue_square:",
-        "#EDDD6E": ":yellow_square:"
-    };
-
-    const isTodaySunday = new Date().getDay() === 6;
-    const { start, end } = getWeekRange((isTodaySunday ? 1 : 0) + weekOffset);
-
+    const { start, end } = getWeekRange(new Date().getDay() === 6 ? 1 : 0 + weekOffset);
     const filteredEvents = planning.events.filter(event => {
         const eventDate = new Date(event.start);
         return eventDate >= start && eventDate < end;
     });
 
-    for (let event of filteredEvents) {
-        const eventDateObj = new Date(event.start);
-        const day = eventDateObj.toLocaleDateString('fr-FR', { weekday: 'short' }).toUpperCase();
-        const numericDate = eventDateObj.toLocaleDateString('fr-FR', { day: 'numeric' });
+    let fields = [];
+    let currentDate = "";
+    let eventsForDate = "";
 
-        const eventDate = `${day} ${numericDate}`;
+    for (let event of filteredEvents) {
+        const eventDate = formatEventDate(event.start);
 
         if (currentDate !== eventDate) {
             if (eventsForDate) {
@@ -132,13 +111,8 @@ const createEventFields = (planning, weekOffset) => {
             eventsForDate = "";
         }
 
-        const emoji = colorToEmoji[event.color] || ":grey_question:";
-        const formatFrenchTime = (date) => new Date(date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-        const time = `\`${formatFrenchTime(event.start)}\` \`${formatFrenchTime(event.end)}\``;
-        const location = `\`${event.location}\``;
-        const name = event.name.length > 40 ? event.name.substring(0, 38) + "..." : event.name;
-
-        eventsForDate += `${emoji} ${time} ${location} ${name}\n`;
+        const emoji = config.planning.colorEmojis[event.color.toLowerCase()] || config.planning.defaultColorEmoji;
+        eventsForDate += `${emoji} ${formatEventTime(event)} ${formatEventLocation(event)} ${formatEventName(event)}\n`;
     }
 
     if (eventsForDate) {
@@ -146,120 +120,113 @@ const createEventFields = (planning, weekOffset) => {
     }
 
     return fields;
-};
+}
 
-const processPlanning = async (titles, interaction, first = true) => {
+function formatEventDate(date) {
+    const eventDateObj = new Date(date);
+    const day = eventDateObj.toLocaleDateString('fr-FR', { weekday: 'short' }).toUpperCase();
+    const numericDate = eventDateObj.toLocaleDateString('fr-FR', { day: 'numeric' });
+    return `${day} ${numericDate}`;
+}
+
+function formatEventTime(event) {
+    const formatFrenchTime = (date) => new Date(date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    return `\`${formatFrenchTime(event.start)}\` \`${formatFrenchTime(event.end)}\``;
+}
+
+function formatEventLocation(event) {
+    return `\`${event.location}\``;
+}
+
+function formatEventName(event) {
+    return event.name.length > 40 ? event.name.substring(0, 38) + "..." : event.name;
+}
+
+async function handleEmojiReaction(interaction, response, titles, emojiCollector, reaction) {
+    const choices = getPlanningData(...titles).map(data => data.title);
+    const emojiIndex = config.planning.choiceEmojis.indexOf(reaction.emoji.name);
+    if (emojiIndex !== -1 && emojiIndex < choices.length) {
+        const option = titles.findIndex(title => !title) || 0;
+        titles[option] = choices[emojiIndex];
+        emojiCollector.stop();
+        await response.reactions.removeAll();
+        await processPlanning(titles, interaction, false);
+    }
+}
+
+async function handleButtonInteraction(interaction, i, planningData, titles, weekOffset) {
+    const change = i.customId === 'previous' ? -1 : 1;
+    weekOffset += change;
+    const planningEmbed = createPlanningEmbed(planningData.plannings[0], titles, weekOffset);
+    await interaction.editReply({embeds: [planningEmbed]});
+    await i.deferUpdate();
+    return weekOffset;
+}
+
+async function processPlanning(titles, interaction, first = true, weekOffset = 0) {
     signale.info(`Planning command executed by ${interaction.user.tag} : ${titles.join(' / ')}`);
     const planningId = getPlanningData(...titles).fullId;
     const planningData = await fetchPlanningById(planningId);
 
     if (!planningData || !planningData.plannings || planningData.plannings.length === 0) {
         const embed = createChoicesEmbed(titles);
-        let response;
-        if (first) {
-            response = await interaction.reply({ embeds: [embed], fetchReply: true });
-        } else {
-            response = await interaction.editReply({ embeds: [embed], fetchReply: true });
-        }
+        const response = first ?
+            await interaction.reply({ embeds: [embed], fetchReply: true }) :
+            await interaction.editReply({ embeds: [embed], fetchReply: true });
 
         await addChoicesReactionsEmoji(titles, response);
 
-        const emojiCollector = response.createReactionCollector({ time: 60000 });
-
+        const emojiCollector = response.createReactionCollector({ time: config.planning.collectorTime });
         emojiCollector.on('collect', async (reaction, user) => {
             if (user.id === interaction.user.id) {
-                const emojies = '🏭 🏢 🏬 🏣 🏤 🏥 🏦 🏨 🏪 🏫 🏩 💒 🏛 🕌 🕍 🛕 🕋 ⛩'.split(' ');
-                const choices = getPlanningData(...titles).map(data => data.title);
-                for (let i = 0; i < choices.length; i++) {
-                    if (reaction.emoji.name === emojies[i]) {
-                        let option = 0;
-                        for (let j = 0; j < titles.length; j++) {
-                            if (!titles[j]) {
-                                option = j;
-                                break;
-                            }
-                        }
-                        titles[option] = choices[i];
-                        emojiCollector.stop();
-                        response.reactions.removeAll();
-                        await processPlanning(titles, interaction, false);
-                        break;
-                    }
-                }
+                await handleEmojiReaction(interaction, response, titles, emojiCollector, reaction);
             }
         });
-
-        emojiCollector.on('end', async collected => {
-            response.reactions.removeAll();
-        });
-
+        emojiCollector.on('end', async () => await response.reactions.removeAll());
         return;
     }
 
     const planningEmbed = createPlanningEmbed(planningData.plannings[0], titles, 0);
+    const previous = new ButtonBuilder().setCustomId('previous').setLabel('<').setStyle(ButtonStyle.Secondary);
+    const next = new ButtonBuilder().setCustomId('next').setLabel('>').setStyle(ButtonStyle.Primary);
+    const row = new ActionRowBuilder().addComponents(previous, next);
 
-    const previous = new ButtonBuilder()
-        .setCustomId('previous')
-        .setLabel('<')
-        .setStyle(ButtonStyle.Secondary);
+    const response = first ?
+        await interaction.reply({ embeds: [planningEmbed], components: [row] }) :
+        await interaction.editReply({ embeds: [planningEmbed], components: [row] });
 
-    const next = new ButtonBuilder()
-        .setCustomId('next')
-        .setLabel('>')
-        .setStyle(ButtonStyle.Primary);
-
-    const row = new ActionRowBuilder()
-        .addComponents(previous, next);
-
-    let response;
-    if (first) {
-        response = await interaction.reply({ embeds: [planningEmbed], components: [row] });
-    } else {
-        response = await interaction.editReply({ embeds: [planningEmbed], components: [row] });
-    }
-
-    let weekOffset = 0;
-    const buttonCollector = response.createMessageComponentCollector({time: 60000});
-
+    const buttonCollector = response.createMessageComponentCollector({time: config.planning.collectorTime });
     buttonCollector.on('collect', async i => {
-        if (i.customId === 'previous') {
-            weekOffset--;
-            const planningEmbed = createPlanningEmbed(planningData.plannings[0], titles, weekOffset);
-            await interaction.editReply({embeds: [planningEmbed]});
-        } else if (i.customId === 'next') {
-            weekOffset++;
-            const planningEmbed = createPlanningEmbed(planningData.plannings[0], titles, weekOffset);
-            await interaction.editReply({embeds: [planningEmbed]});
-        }
-        await i.deferUpdate();
+        weekOffset = await handleButtonInteraction(interaction, i, planningData, titles, weekOffset);
     });
-
-    buttonCollector.on('end', async collected => {
+    buttonCollector.on('end', async () => {
         await interaction.editReply({components: []});
     });
 }
 
-const commandData = new SlashCommandBuilder()
-    .setName('planning')
-    .setDescription('Liste des planning')
-    .addStringOption(option => option.setName('etablissement').setDescription('Etablissement').setAutocomplete(true))
-    .addStringOption(option => option.setName('edt1').setDescription('Formation/Année/Groupe').setAutocomplete(true))
-    .addStringOption(option => option.setName('edt2').setDescription('Formation/Année/Groupe').setAutocomplete(true))
-    .addStringOption(option => option.setName('edt3').setDescription('Formation/Année/Groupe').setAutocomplete(true))
-    .addStringOption(option => option.setName('edt4').setDescription('Formation/Année/Groupe').setAutocomplete(true));
+function commandData() {
+    let command = new SlashCommandBuilder()
+        .setName(config.planning.command)
+        .setDescription(config.planning.commandDescription)
+
+    for (const commandOption of config.planning.commandOptions) {
+        command.addStringOption(option =>
+            option.setName(commandOption.name)
+                .setDescription(commandOption.description)
+                .setAutocomplete(true));
+    }
+
+    return command;
+}
 
 async function execute(interaction) {
-    const titles = [
-        'etablissement', 'edt1', 'edt2', 'edt3', 'edt4'
-    ].map(name => interaction.options.getString(name));
+    const titles = config.planning.commandOptions.map(option => interaction.options.getString(option.name));
 
     await processPlanning(titles, interaction);
 }
 
 async function autocomplete(interaction) {
-    const titles = [
-        'etablissement', 'edt1', 'edt2', 'edt3', 'edt4'
-    ].map(name => interaction.options.getString(name));
+    const titles = config.planning.commandOptions.map(option => interaction.options.getString(option.name));
 
     const choices = getPlanningData(...titles).map(data => data.title);
     const focusedOption = interaction.options.getFocused(true);
@@ -269,7 +236,7 @@ async function autocomplete(interaction) {
 }
 
 module.exports = {
-    data: commandData,
+    commandData,
     execute,
     autocomplete
 };

@@ -1,8 +1,8 @@
-require('dotenv').config();
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
 const signale = require('signale');
+const config = require('./config.json');
 
 signale.config({
     displayFilename: true,
@@ -26,8 +26,8 @@ for (const file of commandFiles) {
     const filePath = path.join(commandsPath, file);
     const command = require(filePath);
 
-    if ('data' in command && 'execute' in command) {
-        client.commands.set(command.data.name, command);
+    if ('commandData' in command && 'execute' in command) {
+        client.commands.set(command.commandData().name, command);
     } else {
         signale.warn(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
     }
@@ -36,7 +36,9 @@ for (const file of commandFiles) {
 client.on(Events.InteractionCreate, async interaction => {
     const command = interaction.client.commands.get(interaction.commandName);
 
-    if (!command) return;
+    if (!command) {
+        return;
+    }
 
     try {
         if (interaction.isAutocomplete() && command.autocomplete) {
@@ -68,4 +70,4 @@ client.once(Events.ClientReady, c => {
     signale.success(`Ready! Logged in as ${c.user.tag}`);
 });
 
-client.login(process.env.DISCORD_TOKEN);
+client.login(config.discordToken);
